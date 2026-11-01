@@ -1020,6 +1020,15 @@ class UpdateHandler:
                         # 标准化路径
                         normalized_path = os.path.normpath(relative_path.replace('/', os.sep))
                         target_path = os.path.join(target_dir, normalized_path)
+                        # 防止 zip 成员路径逃出目标目录
+                        try:
+                            inside = os.path.commonpath([os.path.abspath(target_path), os.path.abspath(target_dir)]) == os.path.abspath(target_dir)
+                        except ValueError:
+                            inside = False
+                        if not inside:
+                            print_warning(f"跳过越界文件: {normalized_path}")
+                            pbar.update(1)
+                            continue
                         os.makedirs(os.path.dirname(target_path), exist_ok=True)
                         info = info_map[member]
                         with zip_ref.open(info) as src, open(target_path, 'wb') as dst:
